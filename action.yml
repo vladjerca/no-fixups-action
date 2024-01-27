@@ -1,0 +1,36 @@
+name: Block autosquash commits
+description: |
+  GitHub Action to use in pull requests to check if there are accidental
+  commits that should have been autosquashed first.
+author: Matijs Brinkhuis
+inputs:
+  skip-checkout:
+    description: |
+      Skip the actions/checkout because you are using your own checkout.
+      Set `fetch-depth` and `ref` yourself. See below for values.
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - name: Check if this is a pull request
+      if: ${{ github.event_name != 'pull_request' }}
+      run: |
+        echo 'This action can only be run on pull requests.'
+        exit 1
+      shell: bash
+
+    - name: Checkout
+      if: ${{ inputs.skip-checkout == 'false' }}
+      uses: actions/checkout@v4.1.1
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Check if there are 'amend!', 'fixup!', and 'squash!' commits
+      run: |
+        ./action.sh
+      shell: bash
+
+branding:
+  icon: git-commit
+  color: red
